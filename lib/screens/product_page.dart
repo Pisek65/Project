@@ -51,7 +51,8 @@ class ProductPage extends StatelessWidget {
               }
               return Consumer<ReviewProvider>(
                 builder: (context, reviewProvider, child) {
-                  final reviews = reviewProvider.getReviewsByProduct(productId);
+                  final List<Review> reviews =
+                      reviewProvider.getReviewsByProduct(productId);
                   return Column(
                     children: [
                       _buildAverageRating(reviewProvider, productId),
@@ -59,12 +60,40 @@ class ProductPage extends StatelessWidget {
                         child: reviews.isEmpty
                             ? _buildEmptyReviews()
                             : ListView.builder(
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
                                 itemCount: reviews.length,
                                 itemBuilder: (context, index) {
+                                  final Review currentReview = reviews[index];
                                   return AnimatedReviewCard(
-                                    review: reviews[index],
+                                    review: currentReview,
                                     index: index,
+                                    onDelete: () {
+                                      reviewProvider
+                                          .deleteReview(currentReview.id);
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: const Text(
+                                            "Review deleted",
+                                            style: TextStyle(color: Color.fromARGB(255, 245, 243, 243)),
+                                          ),
+                                          backgroundColor: const Color.fromARGB(255, 244, 1, 1),
+                                          behavior: SnackBarBehavior.floating,
+                                        ),
+                                      );
+                                    },
+                                    onEdit: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => ReviewForm(
+                                            productId: productId,
+                                            reviewToEdit: currentReview,
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   );
                                 },
                               ),
@@ -80,7 +109,8 @@ class ProductPage extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => ReviewForm(productId: productId)),
+          MaterialPageRoute(
+              builder: (context) => ReviewForm(productId: productId)),
         ),
         backgroundColor: Colors.amber.shade700,
         child: const Icon(Icons.add, color: Colors.white, size: 30),
@@ -99,7 +129,10 @@ class ProductPage extends StatelessWidget {
           color: Colors.white.withOpacity(0.9),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
-            BoxShadow(color: Colors.black26, blurRadius: 8, offset: const Offset(0, 4)),
+            BoxShadow(
+                color: Colors.black26,
+                blurRadius: 8,
+                offset: const Offset(0, 4)),
           ],
         ),
         child: Row(
@@ -161,16 +194,29 @@ class ProductPage extends StatelessWidget {
 class AnimatedReviewCard extends StatelessWidget {
   final Review review;
   final int index;
+  final VoidCallback onDelete;
+  final VoidCallback onEdit;
 
-  const AnimatedReviewCard({required this.review, required this.index, Key? key}) : super(key: key);
+  const AnimatedReviewCard({
+    required this.review,
+    required this.index,
+    required this.onDelete,
+    required this.onEdit,
+    Key? key,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOut,
-      transform: Matrix4.translationValues(0, index * 8 < 50 ? 0 : 50 - index * 8, 0),
-      child: ReviewCard(review: review),
+      transform:
+          Matrix4.translationValues(0, index * 8 < 50 ? 0 : 50 - index * 8, 0),
+      child: ReviewCard(
+        review: review,
+        onDelete: onDelete,
+        onEdit: onEdit,
+      ),
     );
   }
 }

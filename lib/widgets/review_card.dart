@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // เพิ่ม import นี้
 import '/model/review.dart';
 
 class ReviewCard extends StatelessWidget {
   final Review review;
+  final VoidCallback onDelete; // Callback สำหรับลบ
+  final VoidCallback onEdit;   // Callback สำหรับแก้ไข
 
-  const ReviewCard({required this.review});
+  const ReviewCard({
+    required this.review,
+    required this.onDelete,
+    required this.onEdit,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +27,39 @@ class ReviewCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // แสดงภาพ (ถ้ามี)
+            if (review.imageUrl != null && review.imageUrl!.isNotEmpty)
+              Container(
+                width: double.infinity,
+                height: 150,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    review.imageUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      print("Image network error: $error");
+                      return const Center(
+                        child: Text(
+                          "Error loading image",
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
             // User Info and Rating
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -80,6 +120,24 @@ class ReviewCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
+            // ปุ่มแก้ไขและลบ (อยู่ตรงกลาง)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blue),
+                  onPressed: onEdit,
+                  tooltip: 'Edit Review',
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: onDelete,
+                  tooltip: 'Delete Review',
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
             // Timestamp
             Align(
               alignment: Alignment.bottomRight,
@@ -98,7 +156,6 @@ class ReviewCard extends StatelessWidget {
     );
   }
 
-  // Helper method to format timestamp
   String _formatTimestamp(DateTime timestamp) {
     return "${timestamp.day}/${timestamp.month}/${timestamp.year} ${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}";
   }
